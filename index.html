@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>고운고 급식 정보</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th,
+    td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <body>
+    <div id="the_whole_new_world">
+
+      <br />
+      <h1><span id ="year"></span>/<span id ="month"></span>/<span id ="day"></span></h1>
+      <h1 class="mealElement"><br />급식을 가져오는<br />중입니다...</h1>
+
+      <p class="zeroKcal">0 칼로리</p>
+      <script>
+        function removeUnusedThings(str) {
+          console.log(str)
+          let menu = str.split("<br/>");
+          console.log(menu)
+          let n = 0
+          while (n < menu.length) {
+            if (menu[n].includes("." + localStorage.getItem("alergy_in") + ".") || menu[n].includes(menu[n].replace(/[0-9]/g, "").replace(/\./g, "").trim() + localStorage.getItem("alergy_in") + ".")) {
+              str = str.replace(menu[n], `<i>${menu[n]}</i>`);
+            }
+            n++
+          }
+          str = str.replace('우유2.', ''); // 우유는 표시 X
+          if (str.includes('밥')) {
+            str =
+              str.slice(0, str.indexOf('밥') + 1) +
+              str.slice(str.indexOf('밥') + 1, str.length);
+          }
+          //밥 뒤에 이모지 표시
+
+          str = str.replaceAll("*", ''); //별표 제거
+          str = str.replaceAll("()", ''); // 빈 괄호는 표시 X
+          displayAlergy();
+          return str;
+
+          function displayAlergy() {
+            if (localStorage.getItem("alergy") === 'false' || !localStorage.getItem("alergy")) {
+              str = str.replace(
+                /[0-9]/g,
+                ''
+              ); //숫자 제거
+              str = str.replace(/\./g, ''); // 불필요한 마침표 제거
+              str = str.replaceAll("()", '');
+            } else if (localStorage.getItem("alergy") === 'true') {
+              document.getElementsByClassName('zeroKcal')[0].style.display = 'none';
+              console.log(str);
+              let menus = str.replaceAll(".", "").split(/[0-9]/g);
+              menus = menus.filter(function (item) {
+                return item !== null && item !== undefined && item !== '';
+              });
+              n = 0;
+              while (n < menus.length) {
+                if (menus[n].includes(localStorage.getItem("alergy_in"))) {
+                  str = str.replace(menus[n], `<b>${menus[n]}</b>`);
+                }
+                str = str.replace(menus[n], menus[n] + "<span>  - </span>");
+                n++;
+              }
+              str = str.replaceAll(".", " ");
+              str = str.replaceAll("18", "<span>조개류</span>");
+              str = str.replaceAll("17", "<span>오징어</span>");
+              str = str.replaceAll("16", "<span>쇠고기</span>");
+              str = str.replaceAll("15", "<span>닭고기</span>");
+              str = str.replaceAll("14", "<span>호두</span>");
+              str = str.replaceAll("13", "<span>아황산염</span>");
+              str = str.replaceAll("12", "<span>토마토</span>");
+              str = str.replaceAll("11", "<span>복숭아</span>");
+              str = str.replaceAll("10", "<span>돼지고기</span>");
+              str = str.replaceAll("9", "<span>새우</span>");
+              str = str.replaceAll("8", "<span>게</span>");
+              str = str.replaceAll("7", "<span>고등어</span>");
+              str = str.replaceAll("6", "<span>밀</span>");
+              str = str.replaceAll("5", "<span>대두</span>");
+              str = str.replaceAll("4", "<span>땅콩</span>");
+              str = str.replaceAll("3", "<span>메밀</span>");
+              str = str.replaceAll("2", "<span>우유</span>");
+              str = str.replaceAll("1", "<span>난류</span>");
+            }
+          }
+        }
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = (today.getMonth() + 1).toString().padStart(2, "0");
+        const day = today.getDate().toString().padStart(2, "0");
+        const todayString = year + month + day;
+
+        console.log(todayString);
+
+  document.getElementById("year").innerHTML = year;
+  document.getElementById("month").innerHTML = month;
+  document.getElementById("day").innerHTML = day;
+
+        const requestUrl = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=4c1690204c08404ca7f1775720f17054&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=I10&SD_SCHUL_CODE=9300178&MMEAL_SC_CODE=3&MLSV_YMD=${todayString}`;
+        const mealElement = document.getElementsByClassName('mealElement')[0];
+        const kcalElement = document.getElementsByClassName('zeroKcal')[0];
+        const schoolNameElement = document.getElementById('school-name');
+
+        fetch(requestUrl)
+          .then((res) => res.json())
+          .then((json) => {
+            //급식이 없을 경우
+            if (!('mealServiceDietInfo' in json)) {
+              mealElement.innerHTML = `<br>석식이 <br>없는 날입니다.`;
+              document.title = `급식`;
+              kcalElement.innerText = ``;
+              schoolNameElement.innerText = localStorage.getItem('schoolname');
+              document.title = localStorage.getItem('schoolname') + "의 급식";
+            }
+            //급식이 있을 경우
+            else {
+              let meal = json['mealServiceDietInfo'][1].row[0].DDISH_NM
+              meal = removeUnusedThings(meal); // 이 함수의 정의가 필요합니다.
+              meal = meal.replace("우유<span>  - </span><span>우유</span>", "")
+              let index = 0;
+              //급식 정보 출력
+              document.title = `${json['mealServiceDietInfo'][1].row[0].SCHUL_NM}의 급식`;
+              mealElement.innerHTML = meal;
+              //칼로리 정보 출력
+              kcalElement.innerText = `${json['mealServiceDietInfo'][1].row[0].CAL_INFO.replace('Kcal', '칼로리')}`;
+            }
+          })
+     
+      </script>
+  </body>
+
+</html>
